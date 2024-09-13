@@ -1,41 +1,55 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import numpy as np
+import time
 
-st.header('レッスン7: 円グラフ(plotly,go)の作成')
-# サンプルデータの作成
-data = {
-'商品': ['A', 'B', 'C', 'D', 'E'],
-'売上': [300, 200, 180, 150, 120]
-}
-df = pd.DataFrame(data)
-st.write('サンプルデータ:')
-st.dataframe(df)
+st.header('レッスン8: キャッシュを使⽤したパフォーマンス最適化')
+def generate_large_dataset():
+# ⼤きなデータセットを⽣成（約10秒かかる）
+    data = pd.DataFrame(np.random.randn(1000000, 5), columns=['A', 'B','C', 'D', 'E'])
+    return data
 
-# 基本的な円グラフの作成
-fig = go.Figure(data=[go.Pie(labels=df['商品'], values=df['売上'])])
-fig.update_layout(title='商品別売上⽐率')
-st.plotly_chart(fig)
+@st.cache_data
+def load_data_cached():
+    return generate_large_dataset()
 
-# カスタマイズされた円グラフの作成
-colors = ['gold', 'mediumturquoise', 'darkorange', 'lightgreen',
-'lightcoral']
-fig = go.Figure(data=[go.Pie(labels=df['商品'],
-values=df['売上'],
-hole=.3,
-marker=dict(colors=colors,
-line=dict(color='#000000',
-width=2)))])
-fig.update_traces(textposition='inside',
-textinfo='percent+label',
-hoverinfo='label+value+percent',
-textfont_size=14)
-fig.update_layout(
-title='商品別売上⽐率（詳細版）',
-font=dict(family="Meiryo", size=12),
-legend=dict(orientation="h", yanchor="bottom", y=1.02,
-xanchor="right", x=1),
-annotations=[dict(text='総売上', x=0.5, y=0.5, font_size=20,
-showarrow=False)]
+def load_data_uncached():
+    return generate_large_dataset()
+
+st.subheader("キャッシュなしの場合")
+start_time = time.time()
+data_uncached = load_data_uncached()
+end_time = time.time()
+st.write(f"データ読み込み時間: {end_time - start_time:.2f} 秒")
+st.write(data_uncached.head())
+
+st.subheader("キャッシュありの場合")
+start_time = time.time()
+data_cached = load_data_cached()
+end_time = time.time()
+st.write(f"データ読み込み時間: {end_time - start_time:.2f} 秒")
+st.write(data_cached.head())
+st.write("キャッシュありの場合、2回⽬以降の読み込みは⾮常に⾼速になります。") ,
+
+@st.cache_resource
+def load_large_dataset():
+    return pd.DataFrame(
+np.random.randn(1000000, 5),
+columns=['A', 'B', 'C', 'D', 'E']
 )
-st.plotly_chart(fig)
+
+st.subheader("⼤規模データセットの処理")
+start_time = time.time()
+large_data = load_large_dataset()
+end_time = time.time()
+st.write(f"⼤規模データセット読み込み時間: {end_time - start_time:.2f} 秒")
+st.write(f"データセットの形状: {large_data.shape}")
+st.write(large_data.head())
+
+@st.cache_data(ttl=10)
+def get_current_time():
+    return pd.Timestamp.now()
+st.subheader("キャッシュの無効化")
+st.write("現在時刻（10秒ごとに更新）:")
+st.write(get_current_time())

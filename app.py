@@ -4,52 +4,43 @@ import plotly.graph_objects as go
 import numpy as np
 import time
 
-st.header('レッスン8: キャッシュを使⽤したパフォーマンス最適化')
-def generate_large_dataset():
-# ⼤きなデータセットを⽣成（約10秒かかる）
-    data = pd.DataFrame(np.random.randn(1000000, 5), columns=['A', 'B','C', 'D', 'E'])
-    return data
+st.header('レッスン9: セッション状態の管理')
+if 'count' not in st.session_state:
+    st.session_state.count = 0
+st.write(f"現在のカウント: {st.session_state.count}")
+if st.button('カウントアップ'):
+    st.session_state.count += 1
+    st.rerun()
+    
+if 'user_name' not in st.session_state:
+    st.session_state.user_name = ""
+if 'user_email' not in st.session_state:
+    st.session_state.user_email = ""
 
-@st.cache_data
-def load_data_cached():
-    return generate_large_dataset()
+user_name = st.text_input("ユーザー名", value=st.session_state.user_name)
+user_email = st.text_input("メールアドレス",
+value=st.session_state.user_email)
 
-def load_data_uncached():
-    return generate_large_dataset()
+if st.button("ユーザー情報を保存"): 
+    st.session_state.user_name = user_name
+    st.session_state.user_email = user_email
+    st.success("ユーザー情報が保存されました！")
 
-st.subheader("キャッシュなしの場合")
-start_time = time.time()
-data_uncached = load_data_uncached()
-end_time = time.time()
-st.write(f"データ読み込み時間: {end_time - start_time:.2f} 秒")
-st.write(data_uncached.head())
+st.write(f"セッションに保存されたユーザー名: {st.session_state.user_name}")
+st.write(f"セッションに保存されたメールアドレス: {st.session_state.user_email}")
 
-st.subheader("キャッシュありの場合")
-start_time = time.time()
-data_cached = load_data_cached()
-end_time = time.time()
-st.write(f"データ読み込み時間: {end_time - start_time:.2f} 秒")
-st.write(data_cached.head())
-st.write("キャッシュありの場合、2回⽬以降の読み込みは⾮常に⾼速になります。") ,
+if 'df' not in st.session_state:
+    st.session_state.df = pd.DataFrame(columns=['商品', '価格'])
+product = st.text_input("商品名を⼊⼒")
+price = st.number_input("価格を⼊⼒", min_value=0)
 
-@st.cache_resource
-def load_large_dataset():
-    return pd.DataFrame(
-np.random.randn(1000000, 5),
-columns=['A', 'B', 'C', 'D', 'E']
-)
+if st.button("商品データを追加"):
+    new_data = pd.DataFrame({'商品': [product], '価格': [price]})
+    st.session_state.df = pd.concat([st.session_state.df, new_data],ignore_index=True)
 
-st.subheader("⼤規模データセットの処理")
-start_time = time.time()
-large_data = load_large_dataset()
-end_time = time.time()
-st.write(f"⼤規模データセット読み込み時間: {end_time - start_time:.2f} 秒")
-st.write(f"データセットの形状: {large_data.shape}")
-st.write(large_data.head())
+st.write("現在の商品データ:")
+st.write(st.session_state.df)
 
-@st.cache_data(ttl=10)
-def get_current_time():
-    return pd.Timestamp.now()
-st.subheader("キャッシュの無効化")
-st.write("現在時刻（10秒ごとに更新）:")
-st.write(get_current_time())
+if st.button("データをリセット"):
+    st.session_state.df = pd.DataFrame(columns=['商品', '価格'])
+    st.rerun()
